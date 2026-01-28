@@ -19,7 +19,37 @@ A task management application built with Express.js, MongoDB, React, Redux (RTK 
 ## Prerequisites
 
 - Node.js >= 20.19.0
-- MongoDB installed and running locally on port 27017
+- Docker and Docker Compose (for MongoDB container)
+
+## Database Setup
+
+### Option 1: Docker MongoDB (Recommended)
+
+```bash
+# Start MongoDB container with persistent data
+npm run docker:db:up
+
+# View MongoDB logs
+npm run docker:db:logs
+
+# Stop MongoDB container
+npm run docker:db:down
+
+# Restart MongoDB container
+npm run docker:db:restart
+```
+
+### Option 2: Local MongoDB
+
+If you prefer to use a local MongoDB installation, update the `.env` file:
+
+```env
+# Comment out the Docker MongoDB URI
+# MONGODB_URI=mongodb://admin:password123@localhost:27017/todai?authSource=admin
+
+# Uncomment the local MongoDB URI
+MONGODB_URI=mongodb://127.0.0.1:27017/todai
+```
 
 ## Installation
 
@@ -91,5 +121,6 @@ todAI/
 │   │   └── main.jsx
 │   ├── vite.config.js
 │   └── package.json
+├── docker-compose.yml     # MongoDB container setup
 └── package.json
 ```

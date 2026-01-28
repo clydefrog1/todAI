@@ -1,19 +1,50 @@
-import { Container, Typography, Box, Paper } from '@mui/material';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import { useState } from 'react';
+import { Container, Typography, Box, Button } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import { useDispatch } from 'react-redux';
+import { SnackbarProvider } from './context/SnackbarContext';
+import TaskList from './components/TaskList';
+import TaskForm from './components/TaskForm';
+import TaskFilters from './components/TaskFilters';
+import { resetFilters } from './store/slices/taskSlice';
 
-function App() {
+function AppContent() {
+  const [formOpen, setFormOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const dispatch = useDispatch();
+
+  const handleOpenCreate = () => {
+    setSelectedTask(null);
+    setFormOpen(true);
+  };
+
+  const handleOpenEdit = (task) => {
+    setSelectedTask(task);
+    setFormOpen(true);
+  };
+
+  const handleCloseForm = () => {
+    setFormOpen(false);
+    setSelectedTask(null);
+  };
+
+  const handleClearFilters = () => {
+    dispatch(resetFilters());
+  };
+
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      {/* Header */}
       <Box
         sx={{
           display: 'flex',
-          flexDirection: 'column',
+          justifyContent: 'space-between',
           alignItems: 'center',
-          gap: 3,
+          mb: 3,
         }}
       >
         <Typography
-          variant="h2"
+          variant="h4"
           component="h1"
           sx={{
             fontWeight: 700,
@@ -25,50 +56,42 @@ function App() {
         >
           todAI
         </Typography>
-        <Typography variant="h6" color="text.secondary" textAlign="center">
-          Your intelligent task management application
-        </Typography>
-
-        <Paper
-          elevation={3}
-          sx={{
-            p: 4,
-            mt: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 2,
-            maxWidth: 500,
-            width: '100%',
-          }}
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleOpenCreate}
         >
-          <CheckCircleOutlineIcon color="success" sx={{ fontSize: 60 }} />
-          <Typography variant="h5" textAlign="center">
-            Setup Complete!
-          </Typography>
-          <Typography variant="body1" color="text.secondary" textAlign="center">
-            The todAI application is successfully configured. You can now start
-            building task management features.
-          </Typography>
-          <Box
-            component="ul"
-            sx={{
-              mt: 2,
-              pl: 2,
-              '& li': {
-                mb: 1,
-                color: 'text.secondary',
-              },
-            }}
-          >
-            <li>Backend running on port 5000</li>
-            <li>Frontend running on port 5173</li>
-            <li>RTK Query configured for API calls</li>
-            <li>Material UI theme ready</li>
-          </Box>
-        </Paper>
+          New Task
+        </Button>
       </Box>
+
+      {/* Filters */}
+      <Box sx={{ mb: 3 }}>
+        <TaskFilters />
+      </Box>
+
+      {/* Task List */}
+      <TaskList
+        onEditTask={handleOpenEdit}
+        onCreateTask={handleOpenCreate}
+        onClearFilters={handleClearFilters}
+      />
+
+      {/* Task Form Dialog */}
+      <TaskForm
+        open={formOpen}
+        onClose={handleCloseForm}
+        task={selectedTask}
+      />
     </Container>
+  );
+}
+
+function App() {
+  return (
+    <SnackbarProvider>
+      <AppContent />
+    </SnackbarProvider>
   );
 }
 
