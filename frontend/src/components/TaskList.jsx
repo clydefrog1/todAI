@@ -15,9 +15,10 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { grey, blue, green } from '@mui/material/colors';
 import { useSelector } from 'react-redux';
 import { useGetTasksQuery, useDeleteTaskMutation } from '../store/apiSlice';
-import { selectFilter, selectSort } from '../store/slices/taskSlice';
+import { selectFilter, selectSort, selectViewMode } from '../store/slices/taskSlice';
 import { useSnackbar } from '../context/SnackbarContext';
 import EmptyState from './EmptyState';
+import { PROJECT_LABELS, PROJECT_COLORS } from '../constants/projects';
 
 const statusColors = {
   todo: grey[500],
@@ -37,14 +38,65 @@ function TaskList({ onEditTask, onCreateTask, onClearFilters }) {
   const { showSnackbar } = useSnackbar();
   const filter = useSelector(selectFilter);
   const sort = useSelector(selectSort);
+  const viewMode = useSelector(selectViewMode);
+
+  // Helper functions for date comparisons
+  const isToday = (date) => {
+    if (!date) return false;
+    const today = new Date();
+    const d = new Date(date);
+    return (
+      d.getFullYear() === today.getFullYear() &&
+      d.getMonth() === today.getMonth() &&
+      d.getDate() === today.getDate()
+    );
+  };
+
+  const isUpcoming = (date) => {
+    if (!date) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    const sevenDaysFromNow = new Date(today);
+    sevenDaysFromNow.setDate(today.getDate() + 7);
+    return d > today && d <= sevenDaysFromNow;
+  };
 
   // Filter and sort tasks
   const filteredAndSortedTasks = useMemo(() => {
     let result = [...tasks];
 
-    // Filter by status
-    if (filter.status !== 'all') {
+    // Filter by view mode first
+    switch (viewMode) {
+      case 'today':
+        result = result.filter((task) => isToday(task.dueDate));
+        break;
+      case 'upcoming':
+        result = result.filter((task) => isUpcoming(task.dueDate));
+        break;
+      case 'completed':
+        result = result.filter((task) => task.status === 'done');
+        break;
+      case 'all':
+      default:
+        // No view mode filter for 'all'
+        break;
+    }
+
+    // Filter by status (only if not in 'completed' view mode)
+    if (filter.status !== 'all' && viewMode !== 'completed') {
       result = result.filter((task) => task.status === filter.status);
+    }
+
+    // Filter by project
+    if (filter.project !== 'all') {
+      result = result.filter((task) => task.project === filter.project);
+    }
+
+    // Filter by priority
+    if (filter.priority !== 'all') {
+      result = result.filter((task) => task.priority === filter.priority);
     }
 
     // Filter by search query
@@ -69,6 +121,20 @@ function TaskList({ onEditTask, onCreateTask, onClearFilters }) {
           comparison = statusOrder[a.status] - statusOrder[b.status];
           break;
         }
+        case 'priority': {
+          // Nulls last: tasks without priority go to the end
+          const aPriority = a.priority ?? 10;
+          const bPriority = b.priority ?? 10;
+          comparison = aPriority - bPriority;
+          break;
+        }
+        case 'dueDate': {
+          // Nulls last: tasks without dueDate go to the end
+          const aDate = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+          const bDate = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+          comparison = aDate - bDate;
+          break;
+        }
         case 'createdAt':
         default:
           comparison = new Date(a.createdAt) - new Date(b.createdAt);
@@ -78,7 +144,7 @@ function TaskList({ onEditTask, onCreateTask, onClearFilters }) {
     });
 
     return result;
-  }, [tasks, filter, sort]);
+  }, [tasks, filter, sort, viewMode]);
 
   const handleDelete = async (task) => {
     try {
@@ -167,6 +233,17 @@ function TaskList({ onEditTask, onCreateTask, onClearFilters }) {
                       fontWeight: 500,
                     }}
                   />
+                  {task.project && (
+                    <Chip
+                      label={PROJECT_LABELS[task.project]}
+                      size="small"
+                      sx={{
+                        backgroundColor: PROJECT_COLORS[task.project],
+                        color: 'white',
+                        fontWeight: 500,
+                      }}
+                    />
+                  )}
                 </Box>
                 {task.description && (
                   <Typography

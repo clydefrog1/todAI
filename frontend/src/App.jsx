@@ -1,17 +1,29 @@
 import { useState } from 'react';
-import { Container, Typography, Box, Button } from '@mui/material';
+import { Container, Typography, Box, Button, Tabs, Tab } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { useDispatch } from 'react-redux';
+import ViewListIcon from '@mui/icons-material/ViewList';
+import TodayIcon from '@mui/icons-material/Today';
+import UpcomingIcon from '@mui/icons-material/Upcoming';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
+import { useDispatch, useSelector } from 'react-redux';
 import { SnackbarProvider } from './context/SnackbarContext';
 import TaskList from './components/TaskList';
 import TaskForm from './components/TaskForm';
 import TaskFilters from './components/TaskFilters';
-import { resetFilters } from './store/slices/taskSlice';
+import { resetFilters, setViewMode, selectViewMode } from './store/slices/taskSlice';
+
+const VIEW_MODE_TABS = [
+  { value: 'all', label: 'All Tasks', icon: <ViewListIcon /> },
+  { value: 'today', label: 'Today', icon: <TodayIcon /> },
+  { value: 'upcoming', label: 'Upcoming', icon: <UpcomingIcon /> },
+  { value: 'completed', label: 'Completed', icon: <DoneAllIcon /> },
+];
 
 function AppContent() {
   const [formOpen, setFormOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const dispatch = useDispatch();
+  const viewMode = useSelector(selectViewMode);
 
   const handleOpenCreate = () => {
     setSelectedTask(null);
@@ -30,6 +42,12 @@ function AppContent() {
 
   const handleClearFilters = () => {
     dispatch(resetFilters());
+  };
+
+  const handleViewModeChange = (event, newValue) => {
+    if (newValue !== null) {
+      dispatch(setViewMode(newValue));
+    }
   };
 
   return (
@@ -63,6 +81,28 @@ function AppContent() {
         >
           New Task
         </Button>
+      </Box>
+
+      {/* View Mode Tabs */}
+      <Box sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs
+          value={viewMode}
+          onChange={handleViewModeChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          aria-label="task view modes"
+        >
+          {VIEW_MODE_TABS.map((tab) => (
+            <Tab
+              key={tab.value}
+              value={tab.value}
+              label={tab.label}
+              icon={tab.icon}
+              iconPosition="start"
+              sx={{ textTransform: 'none', minHeight: 48 }}
+            />
+          ))}
+        </Tabs>
       </Box>
 
       {/* Filters */}

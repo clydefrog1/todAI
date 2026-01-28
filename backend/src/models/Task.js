@@ -35,6 +35,13 @@ const taskSchema = new mongoose.Schema(
     dueDate: {
       type: Date,
     },
+    project: {
+      type: String,
+      enum: {
+        values: ['personal', 'work', 'shopping', 'health', 'finance', 'other'],
+        message: 'Project must be one of: personal, work, shopping, health, finance, other',
+      },
+    },
   },
   {
     timestamps: true,

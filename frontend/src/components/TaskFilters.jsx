@@ -18,11 +18,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   setStatusFilter,
   setSearchQuery,
+  setProjectFilter,
+  setPriorityFilter,
   setSortField,
   toggleSortOrder,
   selectFilter,
   selectSort,
 } from '../store/slices/taskSlice';
+import { PROJECT_OPTIONS, PROJECT_LABELS } from '../constants/projects';
 
 function TaskFilters() {
   const dispatch = useDispatch();
@@ -41,6 +44,14 @@ function TaskFilters() {
 
   const handleSortFieldChange = (event) => {
     dispatch(setSortField(event.target.value));
+  };
+
+  const handleProjectChange = (event) => {
+    dispatch(setProjectFilter(event.target.value));
+  };
+
+  const handlePriorityChange = (event) => {
+    dispatch(setPriorityFilter(event.target.value));
   };
 
   const handleToggleSortOrder = () => {
@@ -92,6 +103,42 @@ function TaskFilters() {
         <ToggleButton value="done">Done</ToggleButton>
       </ToggleButtonGroup>
 
+      {/* Project Filter */}
+      <FormControl size="small" sx={{ minWidth: 130 }}>
+        <InputLabel id="project-filter-label">Project</InputLabel>
+        <Select
+          labelId="project-filter-label"
+          value={filter.project}
+          onChange={handleProjectChange}
+          label="Project"
+        >
+          <MenuItem value="all">All Projects</MenuItem>
+          {PROJECT_OPTIONS.map((project) => (
+            <MenuItem key={project} value={project}>
+              {PROJECT_LABELS[project]}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+
+      {/* Priority Filter */}
+      <FormControl size="small" sx={{ minWidth: 120 }}>
+        <InputLabel id="priority-filter-label">Priority</InputLabel>
+        <Select
+          labelId="priority-filter-label"
+          value={filter.priority}
+          onChange={handlePriorityChange}
+          label="Priority"
+        >
+          <MenuItem value="all">All Priorities</MenuItem>
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((p) => (
+            <MenuItem key={p} value={p}>
+              Priority {p}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+
       {/* Sort Controls */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <FormControl size="small" sx={{ minWidth: 120 }}>
@@ -102,9 +149,11 @@ function TaskFilters() {
             onChange={handleSortFieldChange}
             label="Sort by"
           >
-            <MenuItem value="createdAt">Date</MenuItem>
+            <MenuItem value="createdAt">Date Created</MenuItem>
             <MenuItem value="title">Title</MenuItem>
             <MenuItem value="status">Status</MenuItem>
+            <MenuItem value="priority">Priority</MenuItem>
+            <MenuItem value="dueDate">Due Date</MenuItem>
           </Select>
         </FormControl>
         <Tooltip title={sort.order === 'asc' ? 'Ascending' : 'Descending'}>

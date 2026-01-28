@@ -18,6 +18,7 @@ import {
   useUpdateTaskMutation,
 } from '../store/apiSlice';
 import { useSnackbar } from '../context/SnackbarContext';
+import { PROJECT_OPTIONS, PROJECT_LABELS } from '../constants/projects';
 
 const initialFormState = {
   title: '',
@@ -25,6 +26,7 @@ const initialFormState = {
   status: 'todo',
   priority: '',
   dueDate: '',
+  project: '',
 };
 
 const pad2 = (n) => String(n).padStart(2, '0');
@@ -55,6 +57,7 @@ function TaskForm({ open, onClose, task = null }) {
         status: task.status || 'todo',
         priority: task.priority ?? '',
         dueDate: formatDateForInput(task.dueDate),
+        project: task.project || '',
       });
     } else {
       setFormData(initialFormState);
@@ -139,6 +142,12 @@ function TaskForm({ open, onClose, task = null }) {
       payload.dueDate = null;
     }
 
+    if (formData.project !== '') {
+      payload.project = formData.project;
+    } else if (isEditMode) {
+      payload.project = null;
+    }
+
     try {
       if (isEditMode) {
         await updateTask({ id: task.id, ...payload }).unwrap();
@@ -203,7 +212,7 @@ function TaskForm({ open, onClose, task = null }) {
             />
             <TextField
               name="priority"
-              label="Priority (19)"
+              label="Priority (1-9)"
               type="number"
               value={formData.priority}
               onChange={handleChange}
@@ -223,6 +232,24 @@ function TaskForm({ open, onClose, task = null }) {
               fullWidth
               InputLabelProps={{ shrink: true }}
             />
+            <FormControl fullWidth>
+              <InputLabel id="project-label">Project</InputLabel>
+              <Select
+                labelId="project-label"
+                name="project"
+                value={formData.project}
+                onChange={handleChange}
+                label="Project"
+              >
+                <MenuItem value="">None</MenuItem>
+                {PROJECT_OPTIONS.map((project) => (
+                  <MenuItem key={project} value={project}>
+                    {PROJECT_LABELS[project]}
+                  </MenuItem>
+                ))}
+              </Select>
+              <FormHelperText>Optional</FormHelperText>
+            </FormControl>
             <FormControl fullWidth error={Boolean(errors.status)}>
               <InputLabel id="status-label">Status</InputLabel>
               <Select
