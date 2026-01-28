@@ -22,6 +22,19 @@ const taskSchema = new mongoose.Schema(
       },
       default: 'todo',
     },
+    priority: {
+      type: Number,
+      min: [1, 'Priority must be at least 1'],
+      max: [9, 'Priority must be at most 9'],
+      validate: {
+        validator: (value) =>
+          value === undefined || value === null || Number.isInteger(value),
+        message: 'Priority must be an integer',
+      },
+    },
+    dueDate: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

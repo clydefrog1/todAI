@@ -23,6 +23,17 @@ const initialFormState = {
   title: '',
   description: '',
   status: 'todo',
+  priority: '',
+  dueDate: '',
+};
+
+const pad2 = (n) => String(n).padStart(2, '0');
+
+const formatDateForInput = (value) => {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 };
 
 function TaskForm({ open, onClose, task = null }) {
@@ -42,6 +53,8 @@ function TaskForm({ open, onClose, task = null }) {
         title: task.title || '',
         description: task.description || '',
         status: task.status || 'todo',
+        priority: task.priority ?? '',
+        dueDate: formatDateForInput(task.dueDate),
       });
     } else {
       setFormData(initialFormState);
@@ -60,13 +73,23 @@ function TaskForm({ open, onClose, task = null }) {
 
   const parseBackendErrors = (errorResponse) => {
     const fieldErrors = {};
-    if (errorResponse?.data?.errors) {
-      errorResponse.data.errors.forEach((err) => {
-        if (err.field) {
-          fieldErrors[err.field] = err.message;
-        }
-      });
-    }
+
+    const errs = errorResponse?.data?.errors;
+    if (!Array.isArray(errs)) return fieldErrors;
+
+    errs.forEach((err) => {
+      if (typeof err === 'string') {
+        fieldErrors._global = fieldErrors._global
+          ? `${fieldErrors._global}\n${err}`
+          : err;
+        return;
+      }
+
+      if (err && typeof err === 'object' && err.field) {
+        fieldErrors[err.field] = err.message || 'Invalid value';
+      }
+    });
+
     return fieldErrors;
   };
 
@@ -85,25 +108,59 @@ function TaskForm({ open, onClose, task = null }) {
       clientErrors.description = 'Description must be 2000 characters or less';
     }
 
+    if (formData.priority !== '' && formData.priority !== null) {
+      const priorityNumber = Number(formData.priority);
+      if (!Number.isInteger(priorityNumber) || priorityNumber < 1 || priorityNumber > 9) {
+        clientErrors.priority = 'Priority must be an integer between 1 and 9';
+      }
+    }
+
     if (Object.keys(clientErrors).length > 0) {
       setErrors(clientErrors);
       return;
     }
 
+    const payload = {
+      title: formData.title,
+      description: formData.description,
+      status: formData.status,
+    };
+
+    if (formData.priority !== '') {
+      payload.priority = Number(formData.priority);
+    } else if (isEditMode) {
+      payload.priority = null;
+    }
+
+    if (formData.dueDate !== '') {
+      // Interpret as local date at midnight
+      payload.dueDate = new Date(`${formData.dueDate}T00:00:00`).toISOString();
+    } else if (isEditMode) {
+      payload.dueDate = null;
+    }
+
     try {
       if (isEditMode) {
-        await updateTask({ id: task.id, ...formData }).unwrap();
+        await updateTask({ id: task.id, ...payload }).unwrap();
         showSnackbar('Task updated successfully', 'success');
       } else {
-        await createTask(formData).unwrap();
+        await createTask(payload).unwrap();
         showSnackbar('Task created successfully', 'success');
       }
       onClose();
     } catch (error) {
       const backendErrors = parseBackendErrors(error);
-      if (Object.keys(backendErrors).length > 0) {
-        setErrors(backendErrors);
-      } else {
+      const { _global, ...fieldLevel } = backendErrors;
+
+      if (Object.keys(fieldLevel).length > 0) {
+        setErrors(fieldLevel);
+      }
+
+      if (_global) {
+        showSnackbar(_global, 'error');
+      }
+
+      if (Object.keys(fieldLevel).length === 0 && !_global) {
         showSnackbar(
           error?.data?.message || 'An error occurred. Please try again.',
           'error'
@@ -143,6 +200,28 @@ function TaskForm({ open, onClose, task = null }) {
               multiline
               rows={4}
               inputProps={{ maxLength: 2000 }}
+            />
+            <TextField
+              name="priority"
+              label="Priority (19)"
+              type="number"
+              value={formData.priority}
+              onChange={handleChange}
+              error={Boolean(errors.priority)}
+              helperText={errors.priority || 'Optional'}
+              fullWidth
+              inputProps={{ min: 1, max: 9, step: 1 }}
+            />
+            <TextField
+              name="dueDate"
+              label="Due Date"
+              type="date"
+              value={formData.dueDate}
+              onChange={handleChange}
+              error={Boolean(errors.dueDate)}
+              helperText={errors.dueDate || 'Optional'}
+              fullWidth
+              InputLabelProps={{ shrink: true }}
             />
             <FormControl fullWidth error={Boolean(errors.status)}>
               <InputLabel id="status-label">Status</InputLabel>

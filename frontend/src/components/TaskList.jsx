@@ -187,6 +187,24 @@ function TaskList({ onEditTask, onCreateTask, onClearFilters }) {
                   <Typography variant="caption" color="text.secondary" display="block">
                     Updated: {new Date(task.updatedAt).toLocaleDateString()}
                   </Typography>
+                  {task.dueDate && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                    >
+                      Due: {new Date(task.dueDate).toLocaleDateString()}
+                    </Typography>
+                  )}
+                  {task.priority !== undefined && task.priority !== null && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                    >
+                      Priority: {task.priority}
+                    </Typography>
+                  )}
               </Box>
               <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
                 <Tooltip title="Edit">
